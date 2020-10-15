@@ -58,6 +58,16 @@ export const Print = {
 
 		return `✖ ${buildProductString(link, store)} :: CAPTCHA`;
 	},
+	captchaComplete(): string {
+		return chalk.yellow('🚀 SEARCH RESUMING');
+	},
+	captchaConfirmed(): string {
+		return chalk.yellow('🚀 CAPTCHA SOLVED');
+	},
+	captchaRequest(): string {
+		return chalk.yellow('✖ Please Solve CAPTCHA');
+	},
+
 	inStock(link: Link, store: Store, color?: boolean, sms?: boolean): string {
 		const productString = `${buildProductString(link, store)} :: IN STOCK`;
 

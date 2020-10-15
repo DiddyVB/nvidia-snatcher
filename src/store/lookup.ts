@@ -2,14 +2,14 @@ import {Browser, Page, Response} from 'puppeteer';
 import {Link, Store} from './model';
 import {Print, logger} from '../logger';
 import {Selector, cardPrice, pageIncludesLabels} from './includes-labels';
-import {closePage, delay, getSleepTime, isStatusCodeInRange} from '../util';
+import {closePage, delay, getSleepTime, isStatusCodeInRange, waitForCaptchaSolve} from '../util';
+import {sendCaptchaNotification, sendNotification} from '../notification';
 import {config} from '../config';
 import {disableBlockerInPage} from '../adblocker';
 import {fetchLinks} from './fetch-links';
 import {filterStoreLink} from './filter';
 import open from 'open';
 import {processBackoffDelay} from './model/helpers/backoff';
-import {sendNotification} from '../notification';
 
 const inStock: Record<string, boolean> = {};
 
@@ -180,6 +180,11 @@ async function lookupCardInStock(store: Store, page: Page, link: Link) {
 	if (store.labels.captcha) {
 		if (await pageIncludesLabels(page, store.labels.captcha, baseOptions)) {
 			logger.warn(Print.captcha(link, store, true));
+			sendCaptchaNotification(link, store);
+
+			await waitForCaptchaSolve();
+			logger.warn(Print.captchaComplete());
+			console.log('Continuing search...');
 			await delay(getSleepTime());
 			return false;
 		}

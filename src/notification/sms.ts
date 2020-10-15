@@ -40,6 +40,36 @@ export function sendSms(link: Link, store: Store) {
 	}
 }
 
+export function sendCaptchaSMS(link: Link, store: Store) {
+	if (phone.number) {
+		logger.debug('↗ sending sms');
+		const carrier = phone.carrier;
+
+		if (carrier && phone.availableCarriers.has(carrier)) {
+			const mailOptions: Mail.Options = {
+				attachments: link.screenshot ? [
+					{
+						filename: link.screenshot,
+						path: `./${link.screenshot}`
+					}
+				] : undefined,
+				from: email.username,
+				subject: Print.captcha(link, store, false),
+				text: link.cartUrl ? link.cartUrl : link.url,
+				to: generateAddress()
+			};
+
+			transporter.sendMail(mailOptions, error => {
+				if (error) {
+					logger.error('✖ couldn\'t send sms', error);
+				} else {
+					logger.info('✔ sms sent');
+				}
+			});
+		}
+	}
+}
+
 function generateAddress() {
 	const carrier = phone.carrier;
 

@@ -1,8 +1,8 @@
 import {Browser, Page, Response} from 'puppeteer';
+import {Print, logger} from './logger';
 import {StatusCodeRangeArray} from './store/model';
 import {config} from './config';
 import {disableBlockerInPage} from './adblocker';
-import {logger} from './logger';
 
 export function getSleepTime() {
 	return config.browser.minSleep + (Math.random() * (config.browser.maxSleep - config.browser.minSleep));
@@ -68,3 +68,22 @@ export async function closePage(page: Page) {
 
 	await page.close();
 }
+
+export async function waitForCaptchaSolve() {
+	logger.warn(Print.captchaRequest());
+	console.log('Solve captcha, then press any key to continue');
+	process.stdin.resume();
+	await new Promise(resolve => {
+		process.stdin.once('data', () => {
+			resolve();
+		});
+		logger.warn(Print.captchaConfirmed());
+		console.log('Captcha solved.');
+	});
+}
+
+void waitForCaptchaSolve().then(() => {
+	console.log('Moving on');
+	process.stdin.pause();
+});
+

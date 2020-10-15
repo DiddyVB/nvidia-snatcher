@@ -28,3 +28,23 @@ export function sendPushoverNotification(link: Link, store: Store) {
 		});
 	}
 }
+
+export function sendCaptchaPushoverNotification(link: Link, store: Store) {
+	if (pushover.token && pushover.username) {
+		logger.debug('↗ sending pushover message');
+
+		const message: PushoverMessage = {
+			message: link.cartUrl ? link.cartUrl : link.url,
+			priority: pushover.priority,
+			title: Print.captcha(link, store)
+		};
+
+		push.send(message, (error: Error) => {
+			if (error) {
+				logger.error('✖ couldn\'t send pushover message', error);
+			} else {
+				logger.info('✔ pushover message sent');
+			}
+		});
+	}
+}

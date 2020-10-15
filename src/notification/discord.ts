@@ -41,3 +41,35 @@ export function sendDiscordMessage(link: Link, store: Store) {
 		})();
 	}
 }
+
+export function sendCaptchaDiscordMessage(link: Link, store: Store) {
+	if (discord.webHookUrl.length > 0) {
+		logger.debug('↗ sending discord message');
+
+		(async () => {
+			try {
+				const embed = new MessageBuilder();
+				embed.setTitle('CAPTCHA Notification');
+				embed.addField('Store', store.name, true);
+
+				if (notifyGroup) {
+					embed.setText(notifyGroup.join(' '));
+				}
+
+				embed.setColor(0x76B900);
+				embed.setTimestamp();
+
+				const promises = [];
+				for (const hook of hooks) {
+					promises.push(new Webhook(hook).send(embed));
+				}
+
+				await Promise.all(promises);
+
+				logger.info('✔ discord message sent');
+			} catch (error) {
+				logger.error('✖ couldn\'t send discord message', error);
+			}
+		})();
+	}
+}
