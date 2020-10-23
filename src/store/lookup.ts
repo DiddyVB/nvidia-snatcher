@@ -2,7 +2,7 @@ import {Browser, Page, Response} from 'puppeteer';
 import {Link, Store} from './model';
 import {Print, logger} from '../logger';
 import {Selector, cardPrice, pageIncludesLabels} from './includes-labels';
-import {closePage, delay, getSleepTime, isStatusCodeInRange, waitForCaptchaSolve} from '../util';
+import {closePage, delay, getRandomUserAgent, getSleepTime, isStatusCodeInRange, waitForCaptchaSolve} from '../util';
 import {sendCaptchaNotification, sendNotification} from '../notification';
 import {config} from '../config';
 import {disableBlockerInPage} from '../adblocker';
@@ -35,9 +35,10 @@ async function lookup(browser: Browser, store: Store) {
 			continue;
 		}
 
-		const page = await browser.newPage();
+		const context = (config.browser.isIncognito ? await browser.createIncognitoBrowserContext() : browser.defaultBrowserContext());
+		const page = (config.browser.isIncognito ? await context.newPage() : await browser.newPage());
 		page.setDefaultNavigationTimeout(config.page.timeout);
-		await page.setUserAgent(config.page.userAgent);
+		await page.setUserAgent(getRandomUserAgent());
 
 		if (store.disableAdBlocker) {
 			try {
@@ -62,8 +63,10 @@ async function lookup(browser: Browser, store: Store) {
 		// used to detect bot traffic, it introduces a 5 second page delay
 		// before redirecting to the next page
 		await processBackoffDelay(store, link, statusCode);
-
 		await closePage(page);
+		if (config.browser.isIncognito) {
+			await context.close();
+		}
 	}
 	/* eslint-enable no-await-in-loop */
 }
@@ -185,7 +188,7 @@ async function lookupCardInStock(store: Store, page: Page, link: Link) {
 			await waitForCaptchaSolve();
 			logger.warn(Print.captchaComplete());
 			console.log('Continuing search...');
-			await delay(getSleepTime());
+			await delay(getSleepTime(store));
 			return false;
 		}
 	}
@@ -214,7 +217,7 @@ export async function tryLookupAndLoop(browser: Browser, store: Store) {
 		logger.error(error);
 	}
 
-	const sleepTime = getSleepTime();
+	const sleepTime = getSleepTime(store);
 	logger.debug(`[${store.name}] Lookup done, next one in ${sleepTime} ms`);
 	setTimeout(tryLookupAndLoop, sleepTime, browser, store);
 }
