@@ -131,6 +131,19 @@ async function lookupCardInStock(store: Store, page: Page, link: Link) {
 		type: 'textContent'
 	};
 
+	if (store.labels.captcha) {
+		if (await pageIncludesLabels(page, store.labels.captcha, baseOptions)) {
+			logger.warn(Print.captcha(link, store, true));
+			sendCaptchaNotification(link, store);
+
+			await waitForCaptchaSolve();
+			logger.warn(Print.captchaComplete());
+			console.log('Continuing search...');
+			await delay(getSleepTime(store));
+			return false;
+		}
+	}
+
 	if (store.labels.inStock) {
 		const options = {...baseOptions, requireVisible: true, type: 'outerHTML' as const};
 
@@ -176,19 +189,6 @@ async function lookupCardInStock(store: Store, page: Page, link: Link) {
 
 		if (price) {
 			logger.info(Print.maxPrice(link, store,	price, maxPrice, true));
-			return false;
-		}
-	}
-
-	if (store.labels.captcha) {
-		if (await pageIncludesLabels(page, store.labels.captcha, baseOptions)) {
-			logger.warn(Print.captcha(link, store, true));
-			sendCaptchaNotification(link, store);
-
-			await waitForCaptchaSolve();
-			logger.warn(Print.captchaComplete());
-			console.log('Continuing search...');
-			await delay(getSleepTime(store));
 			return false;
 		}
 	}
